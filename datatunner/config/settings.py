@@ -3,7 +3,7 @@ Configurações padrão do DataTunner
 """
 
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 # Diretórios padrão
 DEFAULT_OUTPUT_DIR = "results"
@@ -29,7 +29,7 @@ DEFAULT_TEST_SPLIT = 0.2
 
 # Configurações de dispositivo
 DEFAULT_DEVICE = "cuda"  # cuda, cpu, mps
-DEFAULT_NUM_WORKERS = 4
+DEFAULT_NUM_WORKERS = 0
 
 # Métricas padrão
 CLASSIFICATION_METRICS = [
@@ -65,7 +65,7 @@ EARLY_STOPPING_PATIENCE = 10
 EARLY_STOPPING_MIN_DELTA = 0.001
 
 
-def get_config(custom_config: Dict[str, Any] = None) -> Dict[str, Any]:
+def get_config(custom_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Retorna configuração completa mesclando defaults com configurações customizadas
     
@@ -111,17 +111,16 @@ def get_config(custom_config: Dict[str, Any] = None) -> Dict[str, Any]:
 
 def setup_directories(base_dir: str = "."):
     """
-    Cria estrutura de diretórios necessária
-    
+    Cria estrutura de diretorios necessaria
+
     Args:
-        base_dir: Diretório base
+        base_dir: Diretorio base
     """
     dirs = [
-        DEFAULT_OUTPUT_DIR,
         DEFAULT_CHECKPOINT_DIR,
         DEFAULT_LOG_DIR,
     ]
-    
+
     for dir_name in dirs:
         path = os.path.join(base_dir, dir_name)
         os.makedirs(path, exist_ok=True)

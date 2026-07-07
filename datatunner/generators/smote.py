@@ -89,23 +89,20 @@ class SMOTEGenerator(BaseSyntheticGenerator):
         """
         if self.X_train is None or self.y_train is None:
             raise ValueError("Execute fit() antes de generate()")
-        
-        # SMOTE gera automaticamente para balancear
+
         X_resampled, y_resampled = self.smote.fit_resample(
             self.X_train, self.y_train
         )
-        
-        # Extrair apenas os sintéticos (depois dos reais)
+
         n_original = len(self.X_train)
         X_synthetic = X_resampled[n_original:]
         y_synthetic = y_resampled[n_original:]
-        
-        # Se n_samples especificado, amostrar
+
         if n_samples and n_samples < len(X_synthetic):
-            indices = np.random.choice(len(X_synthetic), n_samples, replace=False)
+            indices = self.rng.choice(len(X_synthetic), n_samples, replace=False)
             X_synthetic = X_synthetic[indices]
             y_synthetic = y_synthetic[indices]
-        
+
         return X_synthetic, y_synthetic
     
     def get_generator_info(self):
@@ -153,25 +150,25 @@ class GaussianNoiseGenerator(BaseSyntheticGenerator):
         n_samples: int
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Gera dados sintéticos adicionando ruído Gaussiano
-        
+        Gera dados sinteticos adicionando ruido Gaussiano
+
         Args:
-            n_samples: Número de amostras
-            
+            n_samples: Numero de amostras
+
         Returns:
             Tupla (X_synthetic, y_synthetic)
         """
         if self.X_train is None:
             raise ValueError("Execute fit() antes de generate()")
-        
-        # Selecionar amostras base aleatórias
-        indices = np.random.choice(len(self.X_train), n_samples, replace=True)
+        if n_samples <= 0:
+            raise ValueError("n_samples deve ser positivo")
+
+        indices = self.rng.choice(len(self.X_train), n_samples, replace=True)
         X_base = self.X_train[indices]
         y_synthetic = self.y_train[indices]
-        
-        # Adicionar ruído Gaussiano
+
         std = np.std(self.X_train, axis=0) * self.noise_level
-        noise = np.random.normal(0, std, size=X_base.shape)
+        noise = self.rng.normal(0, std, size=X_base.shape)
         X_synthetic = X_base + noise
-        
+
         return X_synthetic, y_synthetic

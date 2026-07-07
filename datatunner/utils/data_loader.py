@@ -6,13 +6,13 @@ import os
 import numpy as np
 import pandas as pd
 from PIL import Image
-from typing import Tuple, List, Optional, Union, Dict
+from typing import Tuple, List, Optional, Dict
 from pathlib import Path
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler
 
 
 class ImageDataset(Dataset):
@@ -105,27 +105,31 @@ class DataLoader:
         if not data_path.exists():
             raise ValueError(f"Diretório não encontrado: {data_dir}")
         
-        # Detectar classes automaticamente
         class_folders = sorted([d for d in data_path.iterdir() if d.is_dir()])
         class_names = [d.name for d in class_folders]
-        
+
+        if not class_folders:
+            raise ValueError(f"Nenhuma subpasta de classe encontrada em: {data_dir}")
+
         print(f"Classes detectadas: {class_names}")
-        
+
         image_paths = []
         labels = []
-        
+
         for class_idx, class_folder in enumerate(class_folders):
-            # Extensões de imagem suportadas
             extensions = ['*.jpg', '*.jpeg', '*.png', '*.bmp', '*.tiff']
-            
+
             for ext in extensions:
                 for img_path in class_folder.glob(ext):
                     image_paths.append(str(img_path))
                     labels.append(class_idx)
-        
+
         print(f"Total de imagens carregadas: {len(image_paths)}")
-        print(f"Distribuição por classe: {np.bincount(labels)}")
-        
+        if labels:
+            print(f"Distribuicao por classe: {np.bincount(labels)}")
+        else:
+            print("Aviso: nenhuma imagem encontrada nas subpastas.")
+
         return image_paths, labels, class_names
     
     @staticmethod
@@ -309,10 +313,10 @@ def create_data_loaders(
     dataset_size = len(dataset)
     indices = list(range(dataset_size))
     split = int(np.floor(validation_split * dataset_size))
-    
+
     if shuffle:
-        np.random.seed(random_state)
-        np.random.shuffle(indices)
+        rng = np.random.default_rng(random_state)
+        rng.shuffle(indices)
     
     train_indices, val_indices = indices[split:], indices[:split]
     

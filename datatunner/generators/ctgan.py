@@ -5,7 +5,6 @@ CTGAN para geração de dados tabulares sintéticos
 import numpy as np
 import pandas as pd
 from typing import Union, Tuple, Optional, Dict, List
-from pathlib import Path
 import warnings
 
 try:
@@ -14,10 +13,6 @@ try:
     CTGAN_AVAILABLE = True
 except ImportError:
     CTGAN_AVAILABLE = False
-    warnings.warn(
-        "SDV não encontrado. Instale com: pip install sdv>=1.2.0",
-        ImportWarning
-    )
 
 from datatunner.generators.base import BaseSyntheticGenerator
 
@@ -79,7 +74,8 @@ class CTGANGenerator(BaseSyntheticGenerator):
         self.metadata = None
         self.column_names = None
         self.categorical_columns = None
-    
+        self._target_values = None
+
     def fit(
         self,
         data: Union[np.ndarray, pd.DataFrame],
@@ -88,27 +84,26 @@ class CTGANGenerator(BaseSyntheticGenerator):
     ):
         """
         Treina CTGAN nos dados
-        
+
         Args:
             data: Dados de treino (DataFrame ou array)
-            labels: Labels (opcional, serão incluídos nos dados)
-            categorical_columns: Lista de colunas categóricas
+            labels: Labels (opcional, serao incluidos nos dados)
+            categorical_columns: Lista de colunas categoricas
         """
-        # Converter para DataFrame se necessário
         if isinstance(data, np.ndarray):
             self.column_names = [f"feature_{i}" for i in range(data.shape[1])]
             df = pd.DataFrame(data, columns=self.column_names)
         else:
             df = data.copy()
             self.column_names = list(df.columns)
-        
-        # Adicionar labels se fornecidos
+
         if labels is not None:
             df['target'] = labels
+            self._target_values = list(np.unique(labels))
             if categorical_columns is None:
                 categorical_columns = []
             categorical_columns = list(categorical_columns) + ['target']
-        
+
         self.categorical_columns = categorical_columns or []
         
         # Criar metadados automaticamente
@@ -184,6 +179,21 @@ class CTGANGenerator(BaseSyntheticGenerator):
         
         return synthetic_data
     
+    def _get_target_values(self, target_column: str) -> List:
+        """Obtem valores unicos do target armazenados no fit ou do metadata"""
+        if self._target_values is not None:
+            return self._target_values
+
+        try:
+            col_meta = self.metadata.columns.get(target_column, {})
+            values = col_meta.get('values')
+            if values:
+                return list(values)
+        except Exception:
+            pass
+
+        return []
+
     def generate_balanced(
         self,
         n_samples_per_class: int,
@@ -191,42 +201,42 @@ class CTGANGenerator(BaseSyntheticGenerator):
     ) -> Tuple[pd.DataFrame, np.ndarray]:
         """
         Gera dados balanceados para cada classe
-        
+
         Args:
-            n_samples_per_class: Número de amostras por classe
+            n_samples_per_class: Numero de amostras por classe
             target_column: Nome da coluna target
-            
+
         Returns:
             Tupla (features, labels) balanceada
         """
         if self.model is None:
             raise ValueError("Execute fit() antes de generate_balanced()")
-        
-        # Obter classes únicas do metadata
-        target_values = self.metadata.columns[target_column].get('values', None)
-        
-        if target_values is None:
-            # Tentar inferir das condições possíveis
+
+        target_values = self._get_target_values(target_column)
+
+        if not target_values:
             raise ValueError(
-                f"Não foi possível determinar valores únicos para {target_column}"
+                f"Nao foi possivel determinar valores unicos para {target_column}. "
+                "Armazene os labels no fit() ou fornea-os manualmente."
             )
-        
+
         all_samples = []
         all_labels = []
-        
+
         for class_value in target_values:
             print(f"Gerando {n_samples_per_class} amostras para classe {class_value}...")
-            
+
             synthetic = self.model.sample_from_conditions(
                 conditions=[{target_column: class_value}] * n_samples_per_class
             )
-            
+
             y = synthetic[target_column].values
             X = synthetic.drop(columns=[target_column])
-            
+
             all_samples.append(X)
             all_labels.append(y)
-        
+
+
         # Concatenar e embaralhar
         X_synthetic = pd.concat(all_samples, ignore_index=True)
         y_synthetic = np.concatenate(all_labels)

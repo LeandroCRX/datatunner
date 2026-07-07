@@ -1,9 +1,10 @@
 """
-Cálculo de métricas de avaliação
+Calculo de metricas de avaliacao
 """
 
+import logging
 import numpy as np
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Union, Optional, Any
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -16,6 +17,8 @@ from sklearn.metrics import (
     mean_absolute_error,
     r2_score,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class MetricsCalculator:
@@ -50,16 +53,17 @@ class MetricsCalculator:
         # ROC-AUC apenas se as probabilidades forem fornecidas
         if y_pred_proba is not None:
             try:
-                # Para classificação binária
-                if y_pred_proba.shape[1] == 2:
+                y_pred_proba = np.asarray(y_pred_proba)
+                if y_pred_proba.ndim == 1:
+                    metrics["roc_auc"] = roc_auc_score(y_true, y_pred_proba)
+                elif y_pred_proba.shape[1] == 2:
                     metrics["roc_auc"] = roc_auc_score(y_true, y_pred_proba[:, 1])
-                # Para classificação multiclasse
                 else:
                     metrics["roc_auc"] = roc_auc_score(
                         y_true, y_pred_proba, multi_class="ovr", average=average
                     )
             except Exception as e:
-                print(f"Aviso: Não foi possível calcular ROC-AUC: {e}")
+                logger.warning(f"Nao foi possivel calcular ROC-AUC: {e}")
                 metrics["roc_auc"] = None
         
         return metrics
@@ -175,35 +179,33 @@ def compute_metrics(
     task_type: str = "classification",
     y_pred_proba: Optional[np.ndarray] = None,
     class_names: Optional[List[str]] = None
-) -> Dict[str, Union[float, Dict]]:
+) -> Dict[str, Any]:
     """
-    Função de conveniência para calcular métricas
-    
+    Funcao de conveniencia para calcular metricas
+
     Args:
         y_true: Labels ou valores verdadeiros
-        y_pred: Predições
+        y_pred: Predicoes
         task_type: "classification" ou "regression"
-        y_pred_proba: Probabilidades (apenas para classificação)
-        class_names: Nomes das classes (apenas para classificação)
-        
+        y_pred_proba: Probabilidades (apenas para classificacao)
+        class_names: Nomes das classes (apenas para classificacao)
+
     Returns:
-        Dicionário com todas as métricas
+        Dicionario com todas as metricas
     """
-    calculator = MetricsCalculator()
-    
     if task_type == "classification":
-        metrics = calculator.calculate_classification_metrics(
+        metrics = MetricsCalculator.calculate_classification_metrics(
             y_true, y_pred, y_pred_proba
         )
-        metrics["confusion_matrix"] = calculator.get_confusion_matrix(
+        metrics["confusion_matrix"] = MetricsCalculator.get_confusion_matrix(
             y_true, y_pred
         ).tolist()
-        metrics["per_class"] = calculator.calculate_per_class_metrics(
+        metrics["per_class"] = MetricsCalculator.calculate_per_class_metrics(
             y_true, y_pred, class_names
         )
     elif task_type == "regression":
-        metrics = calculator.calculate_regression_metrics(y_true, y_pred)
+        metrics = MetricsCalculator.calculate_regression_metrics(y_true, y_pred)
     else:
-        raise ValueError(f"Tipo de tarefa inválido: {task_type}")
-    
+        raise ValueError(f"Tipo de tarefa invalido: {task_type}")
+
     return metrics

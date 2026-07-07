@@ -5,9 +5,7 @@ Data Augmentation para imagens
 import numpy as np
 from PIL import Image
 import albumentations as A
-from albumentations.pytorch import ToTensorV2
 from typing import List, Tuple, Optional
-import os
 from pathlib import Path
 
 from datatunner.generators.base import BaseSyntheticGenerator
@@ -124,13 +122,14 @@ class ImageAugmentation(BaseSyntheticGenerator):
         """
         if not hasattr(self, 'image_paths'):
             raise ValueError("Execute fit() antes de generate()")
-        
+        if not self.image_paths:
+            raise ValueError("Nenhuma imagem para augmentar")
+
         augmented_paths = []
         augmented_labels = []
-        
+
         for i in range(n_samples):
-            # Selecionar imagem aleatória
-            idx = np.random.randint(len(self.image_paths))
+            idx = self.rng.integers(0, len(self.image_paths))
             img_path = self.image_paths[idx]
             label = self.labels[idx] if self.labels is not None else 0
             
@@ -198,10 +197,9 @@ class ImageAugmentation(BaseSyntheticGenerator):
                 continue
                 
             print(f"   Processando '{class_name}': {len(img_files)} originais...")
-            
+
             count = 0
-            # Embaralhar para pegar aleatórios se houver limite
-            np.random.shuffle(img_files)
+            self.rng.shuffle(img_files)
             
             for img_file in img_files:
                 if max_samples_per_class and count >= max_samples_per_class:

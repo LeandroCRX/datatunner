@@ -4,7 +4,7 @@ Modelos de Perceptrons de Múltiplas Camadas (MLP)
 
 import torch
 import torch.nn as nn
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from datatunner.models.base import BaseModel
 
@@ -16,20 +16,23 @@ class MLPClassifier(BaseModel):
         self,
         input_dim: int,
         num_classes: int,
-        hidden_layers: List[int] = [128, 64, 32],
+        hidden_layers: Optional[List[int]] = None,
         dropout: float = 0.3,
         batch_norm: bool = True
     ):
         """
         Args:
-            input_dim: Dimensão de entrada
-            num_classes: Número de classes
-            hidden_layers: Lista com número de neurônios por camada oculta
+            input_dim: Dimensao de entrada
+            num_classes: Numero de classes
+            hidden_layers: Lista com numero de neuronios por camada oculta
             dropout: Taxa de dropout
             batch_norm: Se deve usar batch normalization
         """
         super().__init__()
-        
+
+        if hidden_layers is None:
+            hidden_layers = [128, 64, 32]
+
         self.input_dim = input_dim
         self.num_classes = num_classes
         self.hidden_layers = hidden_layers
@@ -75,20 +78,23 @@ class MLPRegressor(BaseModel):
         self,
         input_dim: int,
         output_dim: int = 1,
-        hidden_layers: List[int] = [128, 64, 32],
+        hidden_layers: Optional[List[int]] = None,
         dropout: float = 0.3,
         batch_norm: bool = True
     ):
         """
         Args:
-            input_dim: Dimensão de entrada
-            output_dim: Dimensão de saída
-            hidden_layers: Lista com número de neurônios por camada oculta
+            input_dim: Dimensao de entrada
+            output_dim: Dimensao de saida
+            hidden_layers: Lista com numero de neuronios por camada oculta
             dropout: Taxa de dropout
             batch_norm: Se deve usar batch normalization
         """
         super().__init__()
-        
+
+        if hidden_layers is None:
+            hidden_layers = [128, 64, 32]
+
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.hidden_layers = hidden_layers
@@ -134,20 +140,23 @@ class DeepMLP(BaseModel):
         self,
         input_dim: int,
         num_classes: int,
-        hidden_layers: List[int] = [256, 256, 128, 128, 64],
+        hidden_layers: Optional[List[int]] = None,
         dropout: float = 0.3,
         use_residual: bool = True
     ):
         """
         Args:
-            input_dim: Dimensão de entrada
-            num_classes: Número de classes
-            hidden_layers: Lista com número de neurônios por camada oculta
+            input_dim: Dimensao de entrada
+            num_classes: Numero de classes
+            hidden_layers: Lista com numero de neuronios por camada oculta
             dropout: Taxa de dropout
-            use_residual: Se deve usar conexões residuais
+            use_residual: Se deve usar conexoes residuais
         """
         super().__init__()
-        
+
+        if hidden_layers is None:
+            hidden_layers = [256, 256, 128, 128, 64]
+
         self.input_dim = input_dim
         self.num_classes = num_classes
         self.use_residual = use_residual

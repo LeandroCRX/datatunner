@@ -5,12 +5,9 @@ Visualização de resultados e geração de gráficos
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-import pandas as pd
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 from pathlib import Path
 import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
 
 
 class ResultsVisualizer:
@@ -30,30 +27,28 @@ class ResultsVisualizer:
         sns.set_palette("husl")
 
     def _apply_plot_style(self, style: str):
-        """Aplica estilo de gráfico de forma segura"""
+        """Aplica estilo de grafico de forma segura"""
         available_styles = plt.style.available
-        
+
         if style != "auto" and style in available_styles:
             try:
                 plt.style.use(style)
                 return
-            except:
+            except Exception:
                 pass
 
-        # Tentativas de fallback para estilos similares ao seaborn
         fallbacks = ["seaborn-v0_8", "seaborn", "ggplot", "bmh"]
         for s in fallbacks:
             if s in available_styles:
                 try:
                     plt.style.use(s)
                     return
-                except:
+                except Exception:
                     continue
-        
-        # Se nada funcionar, usa o padrão do matplotlib
+
         try:
             plt.style.use("default")
-        except:
+        except Exception:
             pass
     
     def plot_proportion_vs_metric(
@@ -71,29 +66,35 @@ class ResultsVisualizer:
             save_name: Nome do arquivo para salvar
         """
         proportions = sorted(results.keys())
-        values = [results[p][metric] for p in proportions]
-        
+        values = [results[p].get(metric) for p in proportions]
+
+        valid = [(p, v) for p, v in zip(proportions, values) if v is not None]
+        if not valid:
+            print(f"Nenhum valor valido para a metrica '{metric}'")
+            return
+
+        valid_props, valid_values = zip(*valid)
+
         plt.figure(figsize=(12, 6))
-        plt.plot(proportions, values, marker='o', linewidth=2, markersize=8)
-        plt.xlabel('Proporção de Dados Sintéticos', fontsize=12)
+        plt.plot(valid_props, valid_values, marker='o', linewidth=2, markersize=8)
+        plt.xlabel('Proporcao de Dados Sinteticos', fontsize=12)
         plt.ylabel(metric.capitalize(), fontsize=12)
-        plt.title(f'{metric.capitalize()} vs Proporção de Dados Sintéticos', fontsize=14)
+        plt.title(f'{metric.capitalize()} vs Proporcao de Dados Sinteticos', fontsize=14)
         plt.grid(True, alpha=0.3)
-        plt.xticks(proportions)
-        
-        # Destacar melhor resultado
-        best_idx = np.argmax(values)
+        plt.xticks(valid_props)
+
+        best_idx = int(np.argmax(valid_values))
         plt.scatter(
-            [proportions[best_idx]],
-            [values[best_idx]],
+            [valid_props[best_idx]],
+            [valid_values[best_idx]],
             color='red',
             s=200,
             marker='*',
             zorder=5,
-            label=f'Melhor: {proportions[best_idx]:.1%}'
+            label=f'Melhor: {valid_props[best_idx]:.1%}'
         )
         plt.legend()
-        
+
         if save_name:
             plt.savefig(self.output_dir / save_name, dpi=150, bbox_inches='tight')
         plt.show()
@@ -276,11 +277,13 @@ class ResultsVisualizer:
             experiment_info: Informações do experimento
             save_name: Nome do arquivo HTML
         """
+        best_prop_str = f"{best_proportion:.1%}" if best_proportion is not None else "N/A"
+
         html_content = f"""
         <!DOCTYPE html>
         <html>
         <head>
-            <title>DataTunner - Relatório de Resultados</title>
+            <title>DataTunner - Relatorio de Resultados</title>
             <style>
                 body {{
                     font-family: Arial, sans-serif;
@@ -338,25 +341,25 @@ class ResultsVisualizer:
         </head>
         <body>
             <div class="container">
-                <h1>🎯 DataTunner - Relatório de Resultados</h1>
-                
+                <h1>DataTunner - Relatorio de Resultados</h1>
+
                 <div class="highlight">
-                    <strong>Melhor Proporção de Dados Sintéticos:</strong> {best_proportion:.1%}
+                    <strong>Melhor Proporcao de Dados Sinteticos:</strong> {best_prop_str}
                 </div>
-                
-                <h2>📊 Informações do Experimento</h2>
+
+                <h2>Informacoes do Experimento</h2>
                 <div class="metric-box">
                     <p><strong>Tipo de Dados:</strong> {experiment_info.get('data_type', 'N/A')}</p>
                     <p><strong>Modelo:</strong> {experiment_info.get('model_name', 'N/A')}</p>
-                    <p><strong>Épocas:</strong> {experiment_info.get('epochs', 'N/A')}</p>
+                    <p><strong>Epocas:</strong> {experiment_info.get('epochs', 'N/A')}</p>
                     <p><strong>Batch Size:</strong> {experiment_info.get('batch_size', 'N/A')}</p>
                 </div>
-                
-                <h2>📈 Resultados por Proporção</h2>
+
+                <h2>Resultados por Proporcao</h2>
                 <table>
                     <thead>
                         <tr>
-                            <th>Proporção</th>
+                            <th>Proporcao</th>
                             <th>Accuracy</th>
                             <th>Precision</th>
                             <th>Recall</th>
@@ -365,16 +368,20 @@ class ResultsVisualizer:
                     </thead>
                     <tbody>
         """
-        
+
         for proportion in sorted(results.keys()):
             metrics = results[proportion]
+            acc = metrics.get('accuracy') or 0
+            prec = metrics.get('precision') or 0
+            rec = metrics.get('recall') or 0
+            f1 = metrics.get('f1_score') or 0
             html_content += f"""
                         <tr>
                             <td>{proportion:.1%}</td>
-                            <td>{metrics.get('accuracy', 0):.4f}</td>
-                            <td>{metrics.get('precision', 0):.4f}</td>
-                            <td>{metrics.get('recall', 0):.4f}</td>
-                            <td>{metrics.get('f1_score', 0):.4f}</td>
+                            <td>{float(acc):.4f}</td>
+                            <td>{float(prec):.4f}</td>
+                            <td>{float(rec):.4f}</td>
+                            <td>{float(f1):.4f}</td>
                         </tr>
             """
         

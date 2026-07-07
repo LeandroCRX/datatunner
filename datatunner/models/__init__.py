@@ -1,5 +1,14 @@
 """
 Modelos de Machine Learning
+
+Modelos PyTorch (integraveis com DataTunner.optimize()):
+  - CNNs: ResNetClassifier, VGGClassifier, MobileNetClassifier, CustomCNN
+  - MLPs: MLPClassifier, MLPRegressor, DeepMLP
+
+Modelos clássicos sklearn (utilitarios autonomos, NAO integraveis
+diretamente com DataTunner.optimize() que exige nn.Module):
+  - DecisionTree, RandomForest, XGBoost, LightGBM, CatBoost, SVM,
+    LogisticRegression, NaiveBayes, KNN
 """
 
 from datatunner.models.base import BaseModel
@@ -15,7 +24,7 @@ from datatunner.models.mlp import (
     DeepMLP
 )
 
-# Importação condicional de modelos clássicos
+# Importacao condicional de modelos classicos (sklearn)
 try:
     from datatunner.models.classical import (
         DecisionTreeClassifier,
@@ -29,7 +38,6 @@ try:
         KNNClassifier
     )
 except ImportError:
-    # Fallback se alguma biblioteca não estiver instalada
     DecisionTreeClassifier = None
     RandomForestClassifier = None
     XGBoostClassifier = None

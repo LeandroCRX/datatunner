@@ -3,7 +3,7 @@ Modelos clássicos de Machine Learning
 """
 
 import numpy as np
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 from sklearn.tree import DecisionTreeClassifier as SKDecisionTree
 from sklearn.ensemble import RandomForestClassifier as SKRandomForest
 from sklearn.svm import SVC as SKSVC
@@ -212,8 +212,8 @@ class XGBoostClassifier(ClassicalMLModel):
         self.max_depth = max_depth
         self.learning_rate = learning_rate
         
-        tree_method = 'gpu_hist' if use_gpu else 'auto'
-        
+        tree_method = 'hist'
+
         self.model = xgb.XGBClassifier(
             n_estimators=n_estimators,
             max_depth=max_depth,
@@ -226,6 +226,7 @@ class XGBoostClassifier(ClassicalMLModel):
             random_state=random_state,
             n_jobs=n_jobs,
             tree_method=tree_method,
+            device='cuda' if use_gpu else 'cpu',
             eval_metric='logloss'
         )
     

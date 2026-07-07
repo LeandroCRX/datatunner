@@ -49,16 +49,18 @@ class BaseModel(nn.Module, ABC):
     def freeze_layers(self, num_layers: int = 0):
         """
         Congela camadas para transfer learning
-        
+
         Args:
-            num_layers: Número de camadas a congelar (0 = todas)
+            num_layers: Nmero de camadas a congelar (0 = todas)
         """
         if num_layers == 0:
             for param in self.parameters():
                 param.requires_grad = False
         else:
-            # Implementar lógica específica por modelo
-            pass
+            raise NotImplementedError(
+                "Congelamento parcial por num_layers nao implementado nesta classe base. "
+                "Use num_layers=0 para congelar todas ou sobrescreva na subclasse."
+            )
     
     def unfreeze_all(self):
         """Descongela todas as camadas"""

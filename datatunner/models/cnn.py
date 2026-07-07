@@ -10,7 +10,7 @@ from torchvision.models import (
     VGG11_Weights, VGG13_Weights, VGG16_Weights, VGG19_Weights,
     MobileNet_V2_Weights, MobileNet_V3_Small_Weights, MobileNet_V3_Large_Weights,
 )
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 from datatunner.models.base import BaseModel
 

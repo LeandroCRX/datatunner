@@ -1,5 +1,5 @@
 """
-Classe base abstrata para geradores de dados sintéticos
+Classe base abstrata para geradores de dados sinteticos
 """
 
 from abc import ABC, abstractmethod
@@ -8,8 +8,8 @@ from typing import Any, Dict, Optional
 
 
 class BaseSyntheticGenerator(ABC):
-    """Classe base para geradores de dados sintéticos"""
-    
+    """Classe base para geradores de dados sinteticos"""
+
     def __init__(self, random_seed: int = 42):
         """
         Args:
@@ -17,7 +17,7 @@ class BaseSyntheticGenerator(ABC):
         """
         self.random_seed = random_seed
         self.generator_name = "BaseGenerator"
-        np.random.seed(random_seed)
+        self.rng = np.random.default_rng(random_seed)
     
     @abstractmethod
     def fit(self, data: Any, labels: Optional[np.ndarray] = None):
