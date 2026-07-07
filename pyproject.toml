@@ -36,9 +36,6 @@ dev = [
     "xgboost>=1.5",
     "lightgbm>=3.0",
     "catboost>=1.0",
-    "diffusers>=0.10",
-    "transformers>=4.20",
-    "accelerate>=0.15",
 ]
 
 [project.urls]
